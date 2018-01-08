@@ -1,4 +1,6 @@
-# gorpl
+# gorpl 
+# gorpl [![Go Report Card](https://goreportcard.com/badge/github.com/xandout/gorpl)](https://goreportcard.com/report/github.com/xandout/gorpl)
+
 
 A simple to use wrapper for [readline](https://github.com/chzyer/readline).
 

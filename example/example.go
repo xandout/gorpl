@@ -4,15 +4,16 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strings"
 
-	"github.com/xandout/repl/repl"
+	"github.com/xandout/gorpl"
 )
 
 var mode = "table"
 
 func main() {
 
-	f := repl.New("> ", ";")
+	f := gorpl.New("> ", ";")
 
 	f.AddAction("exit", func(args ...interface{}) (interface{}, error) {
 		fmt.Println("Bye!")
@@ -51,12 +52,20 @@ func main() {
 		fmt.Println(mode)
 		return "", nil
 	})
-	f.Default = repl.Action{
+	f.AddAction("biggerize", func(args ...interface{}) (interface{}, error) {
+		if len(args) != 1 {
+			return nil, errors.New("you gave the wrong number of args")
+		}
+		fmt.Println(strings.ToUpper(args[0].(string)))
+		return "", nil
+	})
+	f.Default = gorpl.Action{
 		Action: func(args ...interface{}) (interface{}, error) {
 			fmt.Println(args)
 			return "", nil
 		},
 	}
+
 	f.Start()
 
 }

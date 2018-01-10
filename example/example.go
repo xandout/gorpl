@@ -1,71 +1,53 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 	"os"
-	"strings"
 
 	"github.com/xandout/gorpl"
+
+	"github.com/xandout/gorpl/action"
 )
 
 var mode = "table"
 
 func main() {
 
-	f := gorpl.New("> ", ";")
-
-	f.AddAction("exit", func(args ...interface{}) (interface{}, error) {
+	exitAction := action.New("exit", func(args ...interface{}) (interface{}, error) {
 		fmt.Println("Bye!")
 		os.Exit(0)
 		return nil, nil
 	})
-	f.AddAction("describe", func(args ...interface{}) (interface{}, error) {
-		fmtString := "SELECT COLUMN_NAME,DATA_TYPE_NAME,LENGTH,IS_NULLABLE, SCHEMA_NAME FROM TABLE_COLUMNS WHERE TABLE_NAME = '%s';"
-		if len(args) != 1 {
-			return nil, errors.New("describe function requires a table name to be supplied")
+	modeAction := action.New("mode", func(args ...interface{}) (interface{}, error) {
+		if len(args) == 0 {
+			fmt.Printf("Current mode is %s\n", mode)
 		}
-		fmt.Println(fmt.Sprintf(fmtString, args[0]))
 		return "", nil
 	})
-	f.AddAction("mode", func(args ...interface{}) (interface{}, error) {
-		modes := map[string]bool{
-			"csv":   true,
-			"table": true,
-		}
-		if len(args) != 1 {
-			return nil, errors.New("mode function requires a valid output mode")
-		}
-		attemptedMode := args[0]
-		if modes[attemptedMode.(string)] {
-			mode = attemptedMode.(string)
-		} else {
-			fmt.Println("Valid modes are:")
-			for k := range modes {
-				fmt.Printf("\t%s\n", k)
-			}
-		}
-		return "", nil
+	csvAction := action.New("csv", func(args ...interface{}) (interface{}, error) {
+		mode = "csv"
+		fmt.Printf("Mode set to %s\n", mode)
 
-	})
-	f.AddAction("show-mode", func(args ...interface{}) (interface{}, error) {
-		fmt.Println(mode)
 		return "", nil
 	})
-	f.AddAction("biggerize", func(args ...interface{}) (interface{}, error) {
-		if len(args) != 1 {
-			return nil, errors.New("you gave the wrong number of args")
-		}
-		fmt.Println(strings.ToUpper(args[0].(string)))
+	tableAction := action.New("table", func(args ...interface{}) (interface{}, error) {
+		mode = "table"
+		fmt.Printf("Mode set to %s\n", mode)
 		return "", nil
 	})
-	f.Default = gorpl.Action{
-		Action: func(args ...interface{}) (interface{}, error) {
-			fmt.Println(args)
-			return "", nil
-		},
-	}
+	csvChild := action.New("csvChild", func(args ...interface{}) (interface{}, error) {
+		fmt.Println("csvChild!")
+		return nil, nil
+	})
+	csvChildChild := action.New("csvChildChild", nil)
+	csvChild.AddChild(csvChildChild)
+	csvAction.AddChild(csvChild)
 
+	modeAction.AddChild(csvAction)
+	modeAction.AddChild(tableAction)
+
+	f := gorpl.New(";")
+	f.AddAction(*modeAction)
+	f.AddAction(*exitAction)
 	f.Start()
-
 }

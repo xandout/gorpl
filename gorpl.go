@@ -138,8 +138,8 @@ REPL_LOOP:
 								if len(newArgs[1:]) == 0 {
 									if aChild.Action != nil {
 										aChild.Action()
+										return
 									}
-									return
 								}
 								childRunner(aChild.Children, newArgs[1:])
 							}

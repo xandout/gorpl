@@ -37,9 +37,14 @@ func main() {
 	})
 	csvChild := action.New("csvChild", func(args ...interface{}) (interface{}, error) {
 		fmt.Println("csvChild!")
+		fmt.Println(args)
 		return nil, nil
 	})
-	csvChildChild := action.New("csvChildChild", nil)
+	csvChildChild := action.New("csvChildChild", func(args ...interface{}) (interface{}, error) {
+		fmt.Println("csvChildChild!")
+		fmt.Println(args)
+		return nil, nil
+	})
 	csvChild.AddChild(csvChildChild)
 	csvAction.AddChild(csvChild)
 

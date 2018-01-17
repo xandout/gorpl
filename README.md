@@ -84,4 +84,4 @@ func main() {
 
 * Enable dynamic autocompletion
 
-
+* Have to register children before parents....need to clean up the API

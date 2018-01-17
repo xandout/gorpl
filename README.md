@@ -13,28 +13,66 @@ A simple to use wrapper for [readline](https://github.com/chzyer/readline).
 `go get github.com/xandout/gorpl`
 
 ```go
+
 package main
+
 import (
-    "github.com/xandout/gorpl"
-    "fmt"
+	"fmt"
+	"os"
+
+	"github.com/xandout/gorpl"
+
+	"github.com/xandout/gorpl/action"
 )
 
+var mode = "table"
+
 func main() {
-    g, err := gorpl.New("> ", ";")
 
-    if err != nil {
-        log.Fatal(err)
-    }
-
-    g.AddAction("biggerize", func(args ...interface{}) (interface{}, error) {
-		if len(args) != 1 {
-			return nil, errors.New("you gave the wrong number of args")
+	exitAction := action.New("exit", func(args ...interface{}) (interface{}, error) {
+		fmt.Println("Bye!")
+		os.Exit(0)
+		return nil, nil
+	})
+	modeAction := action.New("mode", func(args ...interface{}) (interface{}, error) {
+		if len(args) == 0 {
+			fmt.Printf("Current mode is %s\n", mode)
 		}
-		fmt.Println(strings.ToUpper(args[0].(string)))
 		return "", nil
-    })
-    g.Start()
+	})
+	csvAction := action.New("csv", func(args ...interface{}) (interface{}, error) {
+		mode = "csv"
+		fmt.Printf("Mode set to %s\n", mode)
+
+		return "", nil
+	})
+	tableAction := action.New("table", func(args ...interface{}) (interface{}, error) {
+		mode = "table"
+		fmt.Printf("Mode set to %s\n", mode)
+		return "", nil
+	})
+	csvChild := action.New("csvChild", func(args ...interface{}) (interface{}, error) {
+		fmt.Println("csvChild!")
+		fmt.Println(args)
+		return nil, nil
+	})
+	csvChildChild := action.New("csvChildChild", func(args ...interface{}) (interface{}, error) {
+		fmt.Println("csvChildChild!")
+		fmt.Println(args)
+		return nil, nil
+	})
+	csvChild.AddChild(csvChildChild)
+	csvAction.AddChild(csvChild)
+
+	modeAction.AddChild(csvAction)
+	modeAction.AddChild(tableAction)
+
+	f := gorpl.New(";")
+	f.AddAction(*modeAction)
+	f.AddAction(*exitAction)
+	f.Start()
 }
+
 
 ```
 
@@ -42,6 +80,8 @@ func main() {
 
 ### TODO
 
-* Enable nested completion
+* ~Enable nested completion~
+
+* Enable dynamic autocompletion
 
 

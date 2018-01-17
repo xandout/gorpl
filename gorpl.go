@@ -111,53 +111,35 @@ REPL_LOOP:
 
 		// Is this a built in command?
 		for _, a := range r.Actions {
-			if strings.HasPrefix(a.Name, cmd[0]) {
+			if a.Name == cmd[0] {
 				// Must be registered.  Now we need to work out children
 
 				args := make([]interface{}, len(cmd[1:]))
-				if len(args) == 0 {
-					ret, err := a.Action()
-					if err != nil {
-						log.Println(err)
-					} else {
-						fmt.Println(ret)
-					}
-					continue REPL_LOOP
-				}
-
 				for i, v := range cmd[1:] {
 					args[i] = v
 				}
 
 				// Determine if child
-				var childRunner func(actions []action.Action, newArgs []interface{})
-				childRunner = func(actions []action.Action, newArgs []interface{}) {
+				var childRunner func(parentAction action.Action, children []action.Action, newArgs []interface{})
+				childRunner = func(parentAction action.Action, children []action.Action, newArgs []interface{}) {
+					mapped := make(map[string]action.Action, len(children))
+					for _, a := range children {
+						mapped[a.Name] = a
+					}
 					if len(newArgs) > 0 {
-						for _, aChild := range actions {
-							if strings.HasPrefix(aChild.Name, newArgs[0].(string)) {
-								if len(newArgs[1:]) == 0 {
-									if aChild.Action != nil {
-										aChild.Action()
-										return
-									}
-								}
-								childRunner(aChild.Children, newArgs[1:])
-							}
-							// Not passing args to last matching child
+						firstarg := newArgs[0].(string)
+						if act, ok := mapped[firstarg]; ok {
+							childRunner(act, act.Children, newArgs[1:])
+						} else {
+							parentAction.Action(newArgs...)
 						}
+					} else {
+						parentAction.Action()
 					}
 				}
-				childRunner(a.Children, args)
+				childRunner(a, a.Children, args)
 				r.RL.SetPrompt("> ")
 				r.RL.SaveHistory(line)
-				if a.Action != nil {
-					ret, err := a.Action(args...)
-					if err != nil {
-						log.Println(err)
-					} else {
-						fmt.Println(ret)
-					}
-				}
 				continue REPL_LOOP
 			}
 		}
@@ -183,43 +165,5 @@ REPL_LOOP:
 			lines = []string{}
 			continue
 		}
-		// if option, ok := repl.Actions[cmd[0]]; ok {
-		// 	args := make([]interface{}, len(cmd[1:]))
-		// 	for i, v := range cmd[1:] {
-		// 		args[i] = v
-		// 	}
-		// 	repl.RL.SetPrompt("> ")
-		// 	repl.RL.SaveHistory(line)
-		// 	ret, err := option.Action(args...)
-		// 	if err != nil {
-		// 		log.Println(err)
-		// 	} else {
-		// 		fmt.Println(ret)
-		// 	}
-		// } else {
-		// 	// is not a registered Action, treat as string with multiline and pass to default.
-		// 	if !strings.HasSuffix(line, repl.Terminator) {
-		// 		lines = append(lines, line)
-		// 		repl.RL.SetPrompt(">>> ")
-		// 		repl.RL.SaveHistory(line)
-		// 		continue
-		// 	} else {
-		// 		args := make([]interface{}, 1)
-		// 		lines = append(lines, line)
-		// 		repl.RL.SetPrompt("> ")
-		// 		repl.RL.SaveHistory(line)
-		// 		args[0] = strings.Join(lines, " ")
-		// 		ret, err := repl.Default.Action(args...)
-		// 		if err != nil {
-		// 			log.Println(err)
-		// 		} else {
-		// 			fmt.Println(ret)
-		// 		}
-		// 		lines = []string{}
-		// 		continue
-		// 	}
-
-		// }
-
 	}
 }
